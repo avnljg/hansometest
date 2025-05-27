@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>작업 등록</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
+<script>
+  // Firebase 설정
+  const firebaseConfig = {
+    apiKey: "AIzaSyA9r1CfIRz9eWk9FHQyCjDPrjbtx1q-slE",
+    authDomain: "produccion-monitoreo.firebaseapp.com",
+    databaseURL: "https://produccion-monitoreo-default-rtdb.firebaseio.com",
+    projectId: "produccion-monitoreo",
+    storageBucket: "produccion-monitoreo.firebasestorage.app",
+    messagingSenderId: "563946409671",
+    appId: "1:563946409671:web:9b5a85422938b8e95478e2",
+    measurementId: "G-NSD6K7WTLZ"
+  };
+
+  // Firebase 초기화
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; }
+    label, input, button { display: block; width: 100%; margin-top: 10px; padding: 10px; }
+    button { background: #2196F3; color: white; border: none; cursor: pointer; }
+    .result { margin-top: 20px; background: #f1f1f1; padding: 15px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h2>작업 등록</h2>
+  <div id="userInfo"></div>
+
+  <label for="style">스타일:</label>
+  <input type="text" id="style" placeholder="예: A-Style">
+
+  <label for="quantity">개수:</label>
+  <input type="number" id="quantity" min="1" placeholder="숫자 입력">
+
+  <button onclick="submitWork()">완료</button>
+
+  <div class="result" id="result" style="display:none;"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!user) {
+      alert("사용자 정보가 없습니다. 다시 등록해주세요.");
+      window.location.href = "user_id.html";
+    } else {
+      document.getElementById("userInfo").innerHTML = `<strong>${user.name}</strong> (Line ${user.line})`;
+    }
+
+function submitWork() {
+  const style = document.getElementById("style").value.trim();
+  const quantity = document.getElementById("quantity").value;
+
+  if (!style || quantity <= 0) {
+    alert("스타일과 개수를 정확히 입력하세요.");
+    return;
+  }
+
+  // 작업 내역 저장
+  const allRecords = JSON.parse(localStorage.getItem("workRecords")) || [];
+  allRecords.push({
+    name: user.name,
+    line: user.line,
+    style,
+    quantity,
+    timestamp: new Date().toLocaleString()
+  });
+  localStorage.setItem("workRecords", JSON.stringify(allRecords));
+
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = `
+    <strong>작업 완료</strong><br>
+    이름: ${user.name}<br>
+    라인: ${user.line}<br>
+    스타일: ${style}<br>
+    개수: ${quantity}
+  `;
+  resultDiv.style.display = "block";
+
+  document.getElementById("style").value = "";
+  document.getElementById("quantity").value = "";
+}
+
+  </script>
+</body>
+</html>
