@@ -37,7 +37,7 @@
 <body>
   <div class="header">전체 사용자 작업 현황</div>
 
-  <table>
+  <table id="dataTable">
     <thead>
       <tr>
         <th>#</th>
@@ -48,7 +48,7 @@
         <th>등록시간</th>
       </tr>
     </thead>
-    <tbody id="dataTable">
+    <tbody id="dataBody">
       <!-- 데이터 자동 삽입 -->
     </tbody>
   </table>
@@ -58,7 +58,7 @@
 
   <script>
     function loadData() {
-      const dataTable = document.getElementById("dataTable");
+      const dataTable = document.getElementById("dataBody");
       dataTable.innerHTML = "";
 
       // 모든 작업 내역 가져오기
