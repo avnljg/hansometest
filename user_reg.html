@@ -62,6 +62,13 @@ function submitWork() {
     return;
   }
 
+// 날짜 포맷: YYYY-MM-DD
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const today = `${yyyy}-${mm}-${dd}`;
+
   // 작업 내역 저장
   const allRecords = JSON.parse(localStorage.getItem("workRecords")) || [];
   allRecords.push({
@@ -69,7 +76,7 @@ function submitWork() {
     line: user.line,
     style,
     quantity,
-    timestamp: new Date().toLocaleString()
+    timestamp: today
   });
   localStorage.setItem("workRecords", JSON.stringify(allRecords));
 

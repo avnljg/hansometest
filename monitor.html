@@ -43,6 +43,14 @@
   <button onclick="exportToExcel()">📥 엑셀로 다운로드</button>
 
   <script>
+    function formatDateToYYYYMMDD(dateString) {
+      const d = new Date(dateString);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+  }
+
     function loadData() {
       const dataBody = document.getElementById("dataBody");
       const selectedDate = document.getElementById("dateFilter").value;
@@ -51,9 +59,11 @@
       const allData = JSON.parse(localStorage.getItem("workRecords")) || [];
 
       allData.forEach((record, index) => {
-        const dateOnly = record.timestamp.split("T")[0]; // ISO 날짜 포맷 사용 시
+        const recordDate = record.timestamp; // 이미 "YYYY-MM-DD" 형식임
 
-        if (!selectedDate || dateOnly === selectedDate) {
+      
+
+        if (!selectedDate || recordDate === selectedDate) {
           const row = document.createElement("tr");
           row.innerHTML = `
             <td><input type="checkbox" class="rowCheckbox" data-index="${index}"></td>
