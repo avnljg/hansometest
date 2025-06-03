@@ -3,43 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>전체 현황 모니터</title>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<script>
-  // Firebase 설정
-  const firebaseConfig = {
-    apiKey: "AIzaSyA9r1CfIRz9eWk9FHQyCjDPrjbtx1q-slE",
-    authDomain: "produccion-monitoreo.firebaseapp.com",
-    databaseURL: "https://produccion-monitoreo-default-rtdb.firebaseio.com",
-    projectId: "produccion-monitoreo",
-    storageBucket: "produccion-monitoreo.firebasestorage.app",
-    messagingSenderId: "563946409671",
-    appId: "1:563946409671:web:9b5a85422938b8e95478e2",
-    measurementId: "G-NSD6K7WTLZ"
-  };
-
-  // Firebase 초기화
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-</script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
-    .header { font-size: 24px; font-weight: bold; }
-    button { margin-top: 10px; padding: 8px 16px; }
+    .header { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    button { padding: 8px 16px; margin: 5px 5px 10px 0; }
+    input[type="date"] { padding: 8px; margin: 5px 10px 5px 0; }
   </style>
 </head>
 <body>
   <div class="header">전체 사용자 작업 현황</div>
 
+  <label>날짜 선택: <input type="date" id="dateFilter" onchange="loadData()" /></label>
+
   <table id="dataTable">
     <thead>
       <tr>
+        <th>선택</th>
         <th>#</th>
         <th>이름</th>
         <th>라인</th>
@@ -53,29 +38,52 @@
     </tbody>
   </table>
 
-  <button onclick="clearAll()">모든 기록 삭제</button>
+  <button onclick="deleteSelected()">✅ 선택 항목 삭제</button>
+  <button onclick="clearAll()">🗑️ 전체 삭제</button>
   <button onclick="exportToExcel()">📥 엑셀로 다운로드</button>
 
   <script>
     function loadData() {
-      const dataTable = document.getElementById("dataBody");
-      dataTable.innerHTML = "";
+      const dataBody = document.getElementById("dataBody");
+      const selectedDate = document.getElementById("dateFilter").value;
+      dataBody.innerHTML = "";
 
-      // 모든 작업 내역 가져오기
       const allData = JSON.parse(localStorage.getItem("workRecords")) || [];
 
       allData.forEach((record, index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${record.name}</td>
-          <td>Line ${record.line}</td>
-          <td>${record.style}</td>
-          <td>${record.quantity}</td>
-          <td>${record.timestamp}</td>
-        `;
-        dataTable.appendChild(row);
+        const dateOnly = record.timestamp.split("T")[0]; // ISO 날짜 포맷 사용 시
+
+        if (!selectedDate || dateOnly === selectedDate) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><input type="checkbox" class="rowCheckbox" data-index="${index}"></td>
+            <td>${index + 1}</td>
+            <td>${record.name}</td>
+            <td>Line ${record.line}</td>
+            <td>${record.style}</td>
+            <td>${record.quantity}</td>
+            <td>${record.timestamp}</td>
+          `;
+          dataBody.appendChild(row);
+        }
       });
+    }
+
+    function deleteSelected() {
+      const checkboxes = document.querySelectorAll(".rowCheckbox:checked");
+      if (checkboxes.length === 0) {
+        alert("삭제할 항목을 선택하세요.");
+        return;
+      }
+
+      let allData = JSON.parse(localStorage.getItem("workRecords")) || [];
+      const indicesToRemove = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+
+      // 인덱스 역순으로 정렬 후 제거
+      indicesToRemove.sort((a, b) => b - a).forEach(i => allData.splice(i, 1));
+
+      localStorage.setItem("workRecords", JSON.stringify(allData));
+      loadData();
     }
 
     function clearAll() {
@@ -84,7 +92,8 @@
         loadData();
       }
     }
-     function exportToExcel() {
+
+    function exportToExcel() {
       const table = document.getElementById("dataTable");
       const wb = XLSX.utils.table_to_book(table, { sheet: "작업현황" });
       XLSX.writeFile(wb, "작업현황.xlsx");
