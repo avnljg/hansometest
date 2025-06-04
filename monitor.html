@@ -59,7 +59,7 @@
       const allData = JSON.parse(localStorage.getItem("workRecords")) || [];
 
       allData.forEach((record, index) => {
-        const recordDate = record.timestamp; // 이미 "YYYY-MM-DD" 형식임
+        const recordDate = record.timestamp.split(" ")[0]; // 이미 "YYYY-MM-DD" 형식임
 
       
 
