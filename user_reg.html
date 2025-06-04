@@ -62,12 +62,15 @@ function submitWork() {
     return;
   }
 
-// 날짜 포맷: YYYY-MM-DD
+  // 날짜 포맷: YYYY-MM-DD HH:MM:SS
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
-  const today = `${yyyy}-${mm}-${dd}`;
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const timestamp = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;  // ✅ 여기서 정의
 
   // 작업 내역 저장
   const allRecords = JSON.parse(localStorage.getItem("workRecords")) || [];
@@ -76,7 +79,7 @@ function submitWork() {
     line: user.line,
     style,
     quantity,
-    timestamp: today
+    timestamp: timestamp  // ✅ 변수 이름 통일
   });
   localStorage.setItem("workRecords", JSON.stringify(allRecords));
 
@@ -86,13 +89,15 @@ function submitWork() {
     이름(nombre): ${user.name}<br>
     라인(linea): ${user.line}<br>
     스타일(stilo): ${style}<br>
-    개수(QTY): ${quantity}
+    개수(QTY): ${quantity}<br>
+    등록시간: ${timestamp}
   `;
   resultDiv.style.display = "block";
 
   document.getElementById("style").value = "";
   document.getElementById("quantity").value = "";
 }
+
 
   </script>
 </body>
