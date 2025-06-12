@@ -17,7 +17,7 @@
   </style>
 </head>
 <body>
-  <div class="header">전체 사용자 작업 현황</div>
+  <div class="header">전체 사용자 작업 현황(Emploado de Monitoreo)</div>
 
   <label>날짜 선택: <input type="date" id="dateFilter" onchange="loadData()" /></label>
 
@@ -26,11 +26,12 @@
       <tr>
         <th>선택</th>
         <th>#</th>
-        <th>이름</th>
-        <th>라인</th>
-        <th>스타일</th>
-        <th>개수</th>
-        <th>등록시간</th>
+        <th>이름(nombre)</th>
+        <th>라인(linea)</th>
+        <th>크리(Talla)</th>
+        <th>부위(Region)</th>
+        <th>개수(QTY)</th>
+        <th>등록시간(Registro Tiempo)</th>
       </tr>
     </thead>
     <tbody id="dataBody">
@@ -38,9 +39,9 @@
     </tbody>
   </table>
 
-  <button onclick="deleteSelected()">✅ 선택 항목 삭제</button>
-  <button onclick="clearAll()">🗑️ 전체 삭제</button>
-  <button onclick="exportToExcel()">📥 엑셀로 다운로드</button>
+  <button onclick="deleteSelected()">✅ 선택 항목 삭제(Eliminar seleccion)(</button>
+  <button onclick="clearAll()">🗑️ 전체 삭제(Eliminar todo)</button>
+  <button onclick="exportToExcel()">📥 엑셀로 다운로드(Descargar a excel)</button>
 
   <script>
     function formatDateToYYYYMMDD(dateString) {
@@ -71,6 +72,7 @@
             <td>${record.name}</td>
             <td>${record.line}</td>
             <td>${record.style}</td>
+            <td>${record.size || '-'}</td>
             <td>${record.quantity}</td>
             <td>${record.timestamp}</td>
           `;

@@ -28,23 +28,74 @@
     label, input, button { display: block; width: 100%; margin-top: 10px; padding: 10px; }
     button { background: #2196F3; color: white; border: none; cursor: pointer; }
     .result { margin-top: 20px; background: #f1f1f1; padding: 15px; border-radius: 5px; }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); /* 가로 5칸 */
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .checkbox-grid label {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <h2>작업 등록</h2>
+  <h2>작업 등록(Registador)</h2>
   <div id="userInfo"></div>
 
-  <label for="style">스타일:</label>
-  <input type="text" id="style" placeholder="예: A-Style">
+ <label>부위(Region):</label>
+<div class="checkbox-grid">
+  <label><input type="checkbox" name="style" value="Unir Hombro"> Unir Hombro</label>
+  <label><input type="checkbox" name="style" value="Sorgele de Cuello"> Sorgele de Cuello</label>
+  <label><input type="checkbox" name="style" value="Pega Manga"> Pega Manga</label>
+  <label><input type="checkbox" name="style" value="Cerrar Coslado"> Cerrar Coslado</label>
+  <label><input type="checkbox" name="style" value="Pega Cinta"> Pega Cinta</label>
+  <label><input type="checkbox" name="style" value="S.l.c Cuello Reel"> S.l.c Cuello Reel</label>
+  <label><input type="checkbox" name="style" value="lapa Cinta"> lapa Cinta</label>
+  <label><input type="checkbox" name="style" value="Rl Cinta"> Rl Cinta</label>
+  <label><input type="checkbox" name="style" value="Ruedo punto"> Ruedo punto</label>
+  <label><input type="checkbox" name="style" value="Ruedo Palda"> Ruedo Palda</label>
+</div>
 
-  <label for="quantity">개수:</label>
+<label>크기(Talla):</label>
+<div class="checkbox-grid">
+  <label><input type="checkbox" name="size" value="XS"> XS</label>
+  <label><input type="checkbox" name="size" value="S"> S</label>
+  <label><input type="checkbox" name="size" value="M"> M</label>
+  <label><input type="checkbox" name="size" value="L"> L</label>
+  <label><input type="checkbox" name="size" value="XL"> XL</label>
+  <label><input type="checkbox" name="size" value="2XL"> 2XL</label>
+  <label><input type="checkbox" name="size" value="3XL"> 3XL</label>
+</div>
+
+  <label for="quantity">개수(QTY):</label>
   <input type="number" id="quantity" min="1" placeholder="숫자 입력">
 
-  <button onclick="submitWork()">완료</button>
+  <button onclick="submitWork()">완료(Completo)</button>
 
   <div class="result" id="result" style="display:none;"></div>
 
   <script>
+function allowOnlyOne(name) {
+    const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          checkboxes.forEach(other => {
+            if (other !== cb) other.checked = false;
+          });
+        }
+      });
+    });
+  }
+
+  // 부위(style), 크기(size)에 적용
+  window.addEventListener('DOMContentLoaded', () => {
+    allowOnlyOne('style');
+    allowOnlyOne('size');
+  });
     const user = JSON.parse(localStorage.getItem("currentUser"));
     if (!user) {
       alert("사용자 정보가 없습니다. 다시 등록해주세요.");
@@ -54,11 +105,16 @@
     }
 
 function submitWork() {
-  const style = document.getElementById("style").value.trim();
+  const styleCheckbox = document.querySelector('input[name="style"]:checked');
+  const sizeCheckbox = document.querySelector('input[name="size"]:checked');
+
+  const style = styleCheckbox ? styleCheckbox.value : '';
+  const size = sizeCheckbox ? sizeCheckbox.value : '';
   const quantity = document.getElementById("quantity").value;
 
-  if (!style || quantity <= 0) {
-    alert("스타일과 개수를 정확히 입력하세요.");
+  // 유효성 검사: 부위, 크기, 개수 모두 필수
+  if (!style || !size || quantity <= 0) {
+    alert("부위, 크기, 개수를 정확히 입력하세요.");
     return;
   }
 
@@ -78,6 +134,7 @@ function submitWork() {
     name: user.name,
     line: user.line,
     style,
+    size,
     quantity,
     timestamp: timestamp  // ✅ 변수 이름 통일
   });
@@ -88,9 +145,10 @@ function submitWork() {
     <strong>작업 완료</strong><br>
     이름(nombre): ${user.name}<br>
     라인(linea): ${user.line}<br>
-    스타일(stilo): ${style}<br>
+    부위(Region)): ${style}<br>
+    크기(talla): ${size}<br>
     개수(QTY): ${quantity}<br>
-    등록시간: ${timestamp}
+    등록시간(Registar de tiempo): ${timestamp}
   `;
   resultDiv.style.display = "block";
 
