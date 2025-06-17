@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>기계 배치도 (라인 기반)</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cell {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 120px;
+      background-color: #f9f9f9;
+      position: relative;
+    }
+    .highlight {
+      background-color: #4caf50;
+      color: white;
+    }
+    .label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .machine {
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    input {
+      padding: 5px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button {
+      padding: 6px 12px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>기계 바코드 기반 배치도</h2>
+<input type="text" id="barcode" placeholder="바코드 입력 (예: N01SBH00013)">
+<button onclick="highlightMachine()">검색</button>
+
+<div class="grid" id="layout"></div>
+
+<script>
+  // Excel에서 자동 추출한 기계 정보
+  const machineInfo = {
+    "N01SL100479": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100500": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100500": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100556": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100579": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100591": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100597": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100646": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SL100654": { "name": "Lockstitch", "line": "01A Line" },
+    "N01SOL00279": { "name": "Overlock", "line": "01A Line" },
+    "N01SOL00608": { "name": "Overlock", "line": "01A Line" },
+    "N01SCS00364": { "name": "Overlock", "line": "01A Line" },
+    "N01SCS00395": { "name": "Coverstitch", "line": "01A Line" },
+    "N01SCS00430": { "name": "Coverstitch", "line": "01A Line" },
+    "N01SCS01364": { "name": "Coverstitch", "line": "01A Line" },
+
+    "N01SCS00335": { "name": "Coverstitch", "line": "01B Line" },
+    "N01SCS00443": { "name": "Coverstitch", "line": "01B Line" },
+    "N01SCS01214": { "name": "Coverstitch", "line": "01B Line" },
+    "N01SL100444": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100466": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100497": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100511": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100549": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100557": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100575": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SL100609": { "name": "Lockstitch", "line": "01B Line" },
+    "N01SOL00250": { "name": "Overlock", "line": "01B Line" },
+    "N01SOL00307": { "name": "Overlock", "line": "01B Line" },
+
+    "N01SCS00252": { "name": "Coverstitch", "line": "02A Line" },
+    "N01SCS00330": { "name": "Coverstitch", "line": "02A Line" },
+    "N01SCS00632": { "name": "Coverstitch", "line": "02A Line" },
+    "N01SCS00649": { "name": "Coverstitch", "line": "02A Line" },
+    "N01SCS01141": { "name": "Coverstitch", "line": "02A Line" },
+    "N01SL100140": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100150": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100190": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100273": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100611": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100635": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100639": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SL100650": { "name": "Lockstitch", "line": "02A Line" },
+    "N01SOL00134": { "name": "Overlock", "line": "02A Line" },
+    "N01SOL00214": { "name": "Overlock", "line": "02A Line" },
+    "N01SOL01565": { "name": "Overlock", "line": "02A Line" },
+
+    "N01SCS00276": { "name": "Coverstitch", "line": "02B Line" },
+    "N01SCS00299": { "name": "Coverstitch", "line": "02B Line" },
+    "N01SCS00391": { "name": "Coverstitch", "line": "02B Line" },
+    "N01SCS00638": { "name": "Coverstitch", "line": "02B Line" },
+    "N01SL100144": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100176": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100240": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100438": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100482": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100498": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100594": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100596": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SL100660": { "name": "Lockstitch", "line": "02B Line" },
+    "N01SOL00339": { "name": "Overlock", "line": "02B Line" },
+    "N01SOL00356": { "name": "Overlock", "line": "02B Line" },
+    "N01SOL01628": { "name": "Overlock", "line": "02B Line" },
+
+  };
+
+  // 고유 라인 목록 추출
+  const lines = [...new Set(Object.values(machineInfo).map(m => m.line))].sort();
+
+  const layout = document.getElementById("layout");
+
+  // 라인 셀 생성
+  lines.forEach(line => {
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.id = line;
+    div.innerHTML = `<span class="label">${line}</span><div class="machine-list"></div>`;
+    layout.appendChild(div);
+  });
+
+  // 전체 기계 미리 표시 (한 셀에 여러 기계 가능)
+  Object.entries(machineInfo).forEach(([code, { name, line }]) => {
+    const container = document.querySelector(`#${CSS.escape(line)} .machine-list`);
+    const item = document.createElement("div");
+    item.className = "machine";
+    item.innerText = `${name} (${code})`;
+    container.appendChild(item);
+  });
+
+  // 바코드 입력 시 강조 기능
+  function highlightMachine() {
+    const barcode = document.getElementById("barcode").value.trim();
+
+    // 모든 셀 초기화
+    document.querySelectorAll(".cell").forEach(cell => {
+      cell.classList.remove("highlight");
+    });
+
+    if (machineInfo[barcode]) {
+      const { line } = machineInfo[barcode];
+      const target = document.getElementById(line);
+      if (target) {
+        target.classList.add("highlight");
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } else {
+      alert("해당 바코드를 찾을 수 없습니다.");
+    }
+  }
+</script>
+
+</body>
+</html>
