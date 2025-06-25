@@ -1,0 +1,554 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>기계 배치도</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+
+    .layout-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .line-section {
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+
+    .line-section.highlight {
+      background-color: yellow !important;
+    }
+
+    .line-section h3 {
+      margin-top: 0;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #aaa;
+      padding: 4px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ddd;
+    }
+
+    .search-area, .form-area {
+      text-align: center;
+      margin: 10px;
+    }
+
+    input, select {
+      padding: 6px;
+      font-size: 14px;
+      margin-right: 5px;
+    }
+
+    button {
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>라인별 기계 배치도</h2>
+
+  <div class="search-area">
+    <input type="text" id="barcodeInput" placeholder="바코드를 입력하세요" />
+    <button onclick="searchByBarcode()">검색</button>
+  </div>
+
+  
+  <div id="layout" class="layout-container"></div>
+
+  <script>
+    const machineInfo = {
+      "N01SCS00363": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD21577" },
+      "N01SCS00476": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD28189" },
+      "N01SCS00511": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD 28230" },
+      "N01SCS01111": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD32005" },
+      "N01SCS01193": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD32147" },
+      "N01SCS01340": { "name": "Coverstitch", "line": "59A Line", "model": "Juki", "serial": "8M4QK00576" },
+      "N01SCS01429": { "name": "Coverstitch", "line": "59A Line", "model": "JACK", "serial": "22092500202" },
+      "N01SL100260": { "name": "Lockstitch", "line": "59A Line", "model": "Sunstar", "serial": "11F18021" },
+      "N01SL101167": { "name": "Lockstitch", "line": "59A Line", "model": "Juki", "serial": "8DOQH04588" },
+      "N01SOL00146": { "name": "Overlock", "line": "59A Line", "model": "Kingtex", "serial": "8112261" },
+      "N01SOL00446": { "name": "Overlock", "line": "59A Line", "model": "Kingtex", "serial": "8161822" },
+      "N01SOL00909": { "name": "Overlock", "line": "59A Line", "model": "Kingtex", "serial": "8186811" },
+      "N01SOL01304": { "name": "Overlock", "line": "59A Line", "model": "Unicorn", "serial": "86060037" },
+      "N01SOL01308": { "name": "Overlock", "line": "59A Line", "model": "Unicorn", "serial": "86060055" },
+      "N01SOL01389": { "name": "Overlock", "line": "59A Line", "model": "HUATANG", "serial": "70001649" },
+      "N01SOL01532": { "name": "Overlock", "line": "59A Line", "model": "Juki", "serial": "8MOQJ00209" },
+      "N01SCS00315": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD 21448" },
+      "N01SCS00495": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD 28214" },
+      "N01SCS01142": { "name": "Coverstitch", "line": "59A Line", "model": "Yamato", "serial": "AD32055" },
+      "N01SOL01501": { "name": "Overlock", "line": "59A Line", "model": "Juki", "serial": "8MOQJ00178" },
+
+      "N01SCS00342": { "name": "Coverstitch", "line": "59B Line", "model": "Yamato", "serial": "AD 21482" },
+      "N01SCS00483": { "name": "Coverstitch", "line": "59B Line", "model": "Yamato", "serial": "AD 28199" },
+      "N01SCS00995": { "name": "Coverstitch", "line": "59B Line", "model": "Pegasus", "serial": "0511269" },
+      "N01SCS01428": { "name": "Coverstitch", "line": "59B Line", "model": "JACK", "serial": "22092500201" },
+      "N01SL100104": { "name": "Lockstitch", "line": "59B Line", "model": "Sunstar", "serial": "34024338" },
+      "N01SL101135": { "name": "Lockstitch", "line": "59B Line", "model": "Juki", "serial": "8DOQH04549" },
+      "N01SOL00200": { "name": "Overlock", "line": "59B Line", "model": "Kingtex", "serial": "8112319" },
+      "N01SOL00407": { "name": "Overlock", "line": "59B Line", "model": "Kingtex", "serial": "8160893" },
+      "N01SOL00693": { "name": "Overlock", "line": "59B Line", "model": "Juki", "serial": "RM0MC03580" },
+      "N01SOL01336": { "name": "Overlock", "line": "59B Line", "model": "HUATANG", "serial": "70001443" },
+      "N01SOL01608": { "name": "Overlock", "line": "59B Line", "model": "Juki", "serial": "8MOQJ00285" },
+      "N01SOL01733": { "name": "Overlock", "line": "59B Line", "model": "Juki", "serial": "8MOQJ04230" },
+      "N01SOL00173": { "name": "Overlock", "line": "59B Line", "model": "Kingtex", "serial": "8112291" },
+
+      "N01SCS01145": { "name": "Coverstitch", "line": "60A Line", "model": "Yamato", "serial": "AD32058" },
+      "N01SCS01174": { "name": "Coverstitch", "line": "60A Line", "model": "Yamato", "serial": "AD32122" },
+      "N01SCS01237": { "name": "Coverstitch", "line": "60A Line", "model": "Yamato", "serial": "AD34905" },
+      "N01SCS01272": { "name": "Coverstitch", "line": "60A Line", "model": "Juki", "serial": "8M4QJ00764" },
+      "N01SCS01417": { "name": "Coverstitch", "line": "60A Line", "model": "Shing Ling", "serial": "0836210813" },
+      "N01SL100552": { "name": "Lockstitch", "line": "60A Line", "model": "Juki", "serial": "8D0KC00463" },
+      "N01SL101061": { "name": "Lockstitch", "line": "60A Line", "model": "Juki", "serial": "8DOQH04435" },
+      "N01SOL00230": { "name": "Overlock", "line": "60A Line", "model": "Kingtex", "serial": "8112352" },
+      "N01SOL00725": { "name": "Overlock", "line": "60A Line", "model": "Juki", "serial": "RM0MC03689" },
+      "N01SOL01414": { "name": "Overlock", "line": "60A Line", "model": "HUATANG", "serial": "70001674" },
+      "N01SOL01691": { "name": "Overlock", "line": "60A Line", "model": "Kingtex", "serial": "8MOQJ04188" },
+      "N01SOL01771": { "name": "Overlock", "line": "60A Line", "model": "Kingtex", "serial": "8MOQJ04268" },
+      "N01SOL01802": { "name": "Overlock", "line": "60A Line", "model": "Kingtex", "serial": "8MOQJ04299" },
+      "N01SOL01854": { "name": "Overlock", "line": "60A Line", "model": "Kingtex", "serial": "8MOQJ04351" },
+
+      "N01SCS00248": { "name": "Coverstitch", "line": "60B Line", "model": "Yamato", "serial": "AD 21261" },
+      "N01SCS00297": { "name": "Coverstitch", "line": "60B Line", "model": "Yamato", "serial": "AD 21410" },
+      "N01SCS00324": { "name": "Coverstitch", "line": "60B Line", "model": "Yamato", "serial": "AD 21457" },
+      "N01SCS00376": { "name": "Coverstitch", "line": "60B Line", "model": "Yamato", "serial": "AD 22657" },
+      "N01SCS01175": { "name": "Coverstitch", "line": "60B Line", "model": "Yamato", "serial": "AD32124" },
+      "N01SCS01131": { "name": "Coverstitch", "line": "60B Line", "model": "Juki", "serial": "8M4QK00567" },
+      "N01SL100773": { "name": "Lockstitch", "line": "60B Line", "model": "JACK", "serial": "18061074551" },
+      "N01SL101163": { "name": "Lockstitch", "line": "60B Line", "model": "Juki", "serial": "8DOQH04581" },
+      "N01SL101173": { "name": "Lockstitch", "line": "60B Line", "model": "Juki", "serial": "8DOQH06218" },
+      "N01SL101202": { "name": "Lockstitch", "line": "60B Line", "model": "Juki", "serial": "8DOQH06277" },
+      "N01SOL00209": { "name": "Overlock", "line": "60B Line", "model": "Kingtex", "serial": "8112329" },
+      "N01SOL01557": { "name": "Overlock", "line": "60B Line", "model": "Juki", "serial": "8MOQJ00234" },
+      "N01SOL01589": { "name": "Overlock", "line": "60B Line", "model": "Juki", "serial": "8MOQJ00266" },
+      "N01SOL01807": { "name": "Overlock", "line": "60B Line", "model": "Juki", "serial": "8MOQJ04304" },
+      "N01SL101199": { "name": "Lockstitch", "line": "60B Line", "model": "Juki", "serial": "8DOQH06267" },
+
+      "N01SCS00199": { "name": "Coverstitch", "line": "61A Line", "model": "Sunstar", "serial": "11H05907" },
+      "N01SCS00361": { "name": "Coverstitch", "line": "61A Line", "model": "Yamator", "serial": "AD 21572" },
+      "N01SCS01014": { "name": "Coverstitch", "line": "61A Line", "model": "Pegasus", "serial": "0515441" },
+      "N01SCS01424": { "name": "Coverstitch", "line": "61A Line", "model": "JACK", "serial": "22092500192" },
+      "N01SCS01425": { "name": "Coverstitch", "line": "61A Line", "model": "JACK", "serial": "22092500193" },
+      "N01SL100364": { "name": "Lockstitch", "line": "61A Line", "model": "Unicorn", "serial": "10010538" },
+      "N01SL101164": { "name": "Lockstitch", "line": "61A Line", "model": "Juki", "serial": "8DOQH04584" },
+      "N01SOL00442": { "name": "Overlock", "line": "61A Line", "model": "Kingtex", "serial": "8161818" },
+      "N01SOL00846": { "name": "Overlock", "line": "61A Line", "model": "Kingtex", "serial": "8164830" },
+      "N01SOL01422": { "name": "Overlock", "line": "61A Line", "model": "HUATANG", "serial": "70001682" },
+      "N01SOL01437": { "name": "Overlock", "line": "61A Line", "model": "Juki", "serial": "8MOQJ00114" },
+      "N01SOL01652": { "name": "Overlock", "line": "61A Line", "model": "Juki", "serial": "8MOQJ04149" },
+      "N01SOL01665": { "name": "Overlock", "line": "61A Line", "model": "Juki", "serial": "8MOQJ04162" },
+      "N01SOL01728": { "name": "Overlock", "line": "61A Line", "model": "Juki", "serial": "8MOQJ04225" },
+      "N01SOL01788": { "name": "Overlock", "line": "61A Line", "model": "Juki", "serial": "8MOQJ04285" },
+
+      "N01SCS00379": { "name": "Coverstitch", "line": "61B Line", "model": "Yamato", "serial": "AD 22675" },  
+      "N01SCS00410": { "name": "Coverstitch", "line": "61B Line", "model": "Yamato", "serial": "AD 22800" },
+      "N01SCS01284": { "name": "Coverstitch", "line": "61B Line", "model": "Juki", "serial": "8M4QJ00776" },
+      "N01SCS01421": { "name": "Coverstitch", "line": "61B Line", "model": "JACK", "serial": "22092500186" },
+      "N01SCS01422": { "name": "Coverstitch", "line": "61B Line", "model": "JACK", "serial": "22092500188" },
+      "N01SL101073": { "name": "Lockstitch", "line": "61B Line", "model": "Juki", "serial": "8DOQH04454" },
+      "N01SL101102": { "name": "Lockstitch", "line": "61B Line", "model": "Juki", "serial": "8DOQH04499" },
+      "N01SL101154": { "name": "Lockstitch", "line": "61B Line", "model": "Juki", "serial": "8DOQH04571" },
+      "N01SL101180": { "name": "Lockstitch", "line": "61B Line", "model": "Juki", "serial": "8DOQH06226" },
+      "N01SOL00227": { "name": "Overlock", "line": "61B Line", "model": "Kingtex", "serial": "8112349" },
+      "N01SOL01475": { "name": "Overlock", "line": "61B Line", "model": "Juki", "serial": "8MOQJ00152" },
+      "N01SOL01601": { "name": "Overlock", "line": "61B Line", "model": "Juki", "serial": "8MOQJ00278" },
+      "N01SOL01623": { "name": "Overlock", "line": "61B Line", "model": "Juki", "serial": "8MOQJ00300" },
+      "N01SOL01680": { "name": "Overlock", "line": "61B Line", "model": "Juki", "serial": "8MOQJ04177" },
+      "N01SOL01831": { "name": "Overlock", "line": "61B Line", "model": "Juki", "serial": "8MOQJ04328" },
+      "N01SCS01426": { "name": "Coverstitch", "line": "61B Line", "model": "JACK", "serial": "22092500195" },
+
+      "N01SCS00320": { "name": "Coverstitch", "line": "62A Line", "model": "Yamato", "serial": "AD 21453" },
+      "N01SCS00772": { "name": "Coverstitch", "line": "62A Line", "model": "Shing Ling", "serial": "0071180523" },
+      "N01SCS01358": { "name": "Coverstitch", "line": "62A Line", "model": "Juki", "serial": "8M4QK00594" },
+      "N01SCS01406": { "name": "Coverstitch", "line": "62A Line", "model": "Shing Ling", "serial": "0823210813" },
+      "N01SL101067": { "name": "Lockstitch", "line": "62A Line", "model": "Juki", "serial": "8DOQH04444" },
+      "N01SL101079": { "name": "Lockstitch", "line": "62A Line", "model": "Juki", "serial": "8DOQH04464" },
+      "N01SL101098": { "name": "Lockstitch", "line": "62A Line", "model": "Juki", "serial": "8DOQH04490" },
+      "N01SL101178": { "name": "Lockstitch", "line": "62A Line", "model": "Juki", "serial": "8DOQH06224" },
+      "N01SOL00320": { "name": "Overlock", "line": "62A Line", "model": "Kingtex", "serial": "8112925" },
+      "N01SOL00514": { "name": "Overlock", "line": "62A Line", "model": "Kingtex", "serial": "8161890" },
+      "N01SOL01432": { "name": "Overlock", "line": "62A Line", "model": "Juki", "serial": "8MOQJ00109" },
+      "N01SOL01647": { "name": "Overlock", "line": "62A Line", "model": "Juki", "serial": "8MOQJ04144" },
+      "N01SOL01707": { "name": "Overlock", "line": "62A Line", "model": "Juki", "serial": "8MOQJ04204" },
+      "N01SOL01712": { "name": "Overlock", "line": "62A Line", "model": "Juki", "serial": "8MOQJ04209" },
+      "N01SOL01803": { "name": "Overlock", "line": "62A Line", "model": "Juki", "serial": "8MOQJ04300" },
+
+      "N01SCS00316": { "name": "Coverstitch", "line": "62B Line", "model": "Yamato", "serial": "AD 21449" },
+      "N01SCS00321": { "name": "Coverstitch", "line": "62B Line", "model": "Yamato", "serial": "AD 21454" },
+      "N01SCS00742": { "name": "Coverstitch", "line": "62B Line", "model": "Shing Ling", "serial": "676560401" },
+      "N01SCS01015": { "name": "Coverstitch", "line": "62B Line", "model": "Pegasus", "serial": "0515442" },
+      "N01SCS01326": { "name": "Coverstitch", "line": "62B Line", "model": "Juki", "serial": "8M4QK00562" },
+      "N01SCS01396": { "name": "Coverstitch", "line": "62B Line", "model": "Shing Ling", "serial": "0719210623" },
+      "N01SL100629": { "name": "Lockstitch", "line": "62B Line", "model": "Juki", "serial": "8D0KD05743" },
+      "N01SL101063": { "name": "Lockstitch", "line": "62B Line", "model": "Juki", "serial": "8DOQH04438" },
+      "N01SL101083": { "name": "Lockstitch", "line": "62B Line", "model": "Juki", "serial": "8DOQH04469" },
+      "N01SL101203": { "name": "Lockstitch", "line": "62B Line", "model": "Juki", "serial": "8DOQH06278" },
+      "N01SOL01502": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ00179" },
+      "N01SOL01530": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ00207" },
+      "N01SOL01600": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ00277" },
+      "N01SOL01738": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ04235" },
+      "N01SOL01768": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ04265" },
+      "N01SOL01830": { "name": "Overlock", "line": "62B Line", "model": "Juki", "serial": "8MOQJ04327" },
+
+      "N01SCS00319": { "name": "Coverstitch", "line": "63A Line", "model": "Yamato", "serial": "AD 21452" },
+      "N01SCS00398": { "name": "Coverstitch", "line": "63A Line", "model": "Yamato", "serial": "AD 22771" },
+      "N01SCS00408": { "name": "Coverstitch", "line": "63A Line", "model": "Yamato", "serial": "AD 22789" },
+      "N01SCS01290": { "name": "Coverstitch", "line": "63A Line", "model": "Juki", "serial": "8M4QJ00782" },
+      "N01SCS01383": { "name": "Coverstitch", "line": "63A Line", "model": "Shing Ling", "serial": "0706210623" },
+      "N01SCS01403": { "name": "Coverstitch", "line": "63A Line", "model": "Shing Ling", "serial": "0820210813" },
+      "N01SL100360": { "name": "Lockstitch", "line": "63A Line", "model": "Unicorn", "serial": "100767" },
+      "N01SL101078": { "name": "Lockstitch", "line": "63A Line", "model": "Juki", "serial": "8DOQH04463" },
+      "N01SOL00179": { "name": "Overlock", "line": "63A Line", "model": "Kingtex", "serial": "8112298" },
+      "N01SOL00357": { "name": "Overlock", "line": "63A Line", "model": "Kingtex", "serial": "8112970" },
+      "N01SOL00371": { "name": "Overlock", "line": "63A Line", "model": "Kingtex", "serial": "8112984" },
+      "N01SOL00394": { "name": "Overlock", "line": "63A Line", "model": "Kingtex", "serial": "8113008" },
+      "N01SOL00921": { "name": "Overlock", "line": "63A Line", "model": "Kingtex", "serial": "8186823" },
+      "N01SOL01701": { "name": "Overlock", "line": "63A Line", "model": "Yamato", "serial": "8MOQJ04198" },
+
+      "N01SCS00428": { "name": "Coverstitch", "line": "63B Line", "model": "Yamato", "serial": "AD 22833" },
+      "N01SCS01192": { "name": "Coverstitch", "line": "63B Line", "model": "Yamato", "serial": "AD32145" },
+      "N01SCS01315": { "name": "Coverstitch", "line": "63B Line", "model": "Juki", "serial": "8M4QJ00807" },
+      "N01SCS01373": { "name": "Coverstitch", "line": "63B Line", "model": "Shing Ling", "serial": "0691210603" },
+      "N01SCS01408": { "name": "Coverstitch", "line": "63B Line", "model": "Shing Ling", "serial": "0825210813" },
+      "N01SL101062": { "name": "Lockstitch", "line": "63B Line", "model": "Juki", "serial": "8DOQH04436" },
+      "N01SL101123": { "name": "Lockstitch", "line": "63B Line", "model": "Juki", "serial": "8DOQH04529" },
+      "N01SOL00239": { "name": "Overlock", "line": "63B Line", "model": "Kingtex", "serial": "8112361" },
+      "N01SOL00599": { "name": "Overlock", "line": "63B Line", "model": "Kingtex", "serial": "8162475" },
+      "N01SOL00853": { "name": "Overlock", "line": "63B Line", "model": "Kingtex", "serial": "8186263" },
+      "N01SOL01407": { "name": "Overlock", "line": "63B Line", "model": "HUATANG", "serial": "70001667" },
+      "N01SOL01639": { "name": "Overlock", "line": "63B Line", "model": "Juki", "serial": "8MOQJ00316" },
+      "N01SOL01689": { "name": "Overlock", "line": "63B Line", "model": "Juki", "serial": "8MOQJ04186" },
+      "N01SOL01758": { "name": "Overlock", "line": "63B Line", "model": "Juki", "serial": "8MOQJ04255" },
+
+      "N01SCS00233": { "name": "Coverstitch", "line": "64A Line", "model": "Yamato", "serial": "AD 19753" },
+      "N01SCS00298": { "name": "Coverstitch", "line": "64A Line", "model": "Yamato", "serial": "AD 21411" },
+      "N01SCS00380": { "name": "Coverstitch", "line": "64A Line", "model": "Yamato", "serial": "AD 22676" },
+      "N01SCS00778": { "name": "Coverstitch", "line": "64A Line", "model": "Shing Ling", "serial": "0077180523" },
+      "N01SCS00998": { "name": "Coverstitch", "line": "64A Line", "model": "Pegasus", "serial": "0511281" },
+      "N01SCS01133": { "name": "Coverstitch", "line": "64A Line", "model": "Yamato", "serial": "AD32042" },
+      "N01SCS01382": { "name": "Coverstitch", "line": "64A Line", "model": "Shing Ling", "serial": "0705210623" },
+      "N01SL101058": { "name": "Lockstitch", "line": "64A Line", "model": "Juki", "serial": "8DOQH04432" },
+      "N01SL101144": { "name": "Lockstitch", "line": "64A Line", "model": "Juki", "serial": "8DOQH04558" },
+      "N01SOL00108": { "name": "Overlock", "line": "64A Line", "model": "Kingtex", "serial": "8073262" },
+      "N01SOL00187": { "name": "Overlock", "line": "64A Line", "model": "Kingtex", "serial": "8112306" },
+      "N01SOL00194": { "name": "Overlock", "line": "64A Line", "model": "Kingtex", "serial": "8112313" },
+      "N01SOL00749": { "name": "Overlock", "line": "64A Line", "model": "Juki", "serial": "RM0MC04696" },
+      "N01SOL01441": { "name": "Overlock", "line": "64A Line", "model": "Juki", "serial": "8MOQJ00118" },
+      "N01SOL01504": { "name": "Overlock", "line": "64A Line", "model": "Juki", "serial": "8MOQJ00181" },
+
+      "N01SCS00284": { "name": "Coverstitch", "line": "64B Line", "model": "Yamato", "serial": "AD 21385" },
+      "N01SCS00429": { "name": "Coverstitch", "line": "64B Line", "model": "Yamato", "serial": "AD 22839" },
+      "N01SCS00985": { "name": "Coverstitch", "line": "64B Line", "model": "Pegasus", "serial": "0511241" },
+      "N01SCS01140": { "name": "Coverstitch", "line": "64B Line", "model": "Yamato", "serial": "AD32053" },
+      "N01SCS01427": { "name": "Coverstitch", "line": "64B Line", "model": "JACK", "serial": "22092500198" },
+      "N01SL100302": { "name": "Lockstitch", "line": "64B Line", "model": "Sunstar", "serial": "11F18859" },
+      "N01SL100700": { "name": "Lockstitch", "line": "64B Line", "model": "JACK", "serial": "18061048692" },
+      "N01SL101138": { "name": "Lockstitch", "line": "64B Line", "model": "Juki", "serial": "8DOQH04552" },
+      "N01SOL00244": { "name": "Overlock", "line": "64B Line", "model": "Kingtex", "serial": "8112366" },
+      "N01SOL00308": { "name": "Overlock", "line": "64B Line", "model": "Kingtex", "serial": "8112912" },
+      "N01SOL00389": { "name": "Overlock", "line": "64B Line", "model": "Kingtex", "serial": "8113003" },
+      "N01SOL00591": { "name": "Overlock", "line": "64B Line", "model": "Kingtex", "serial": "8162467" },
+      "N01SOL01185": { "name": "Overlock", "line": "64B Line", "model": "Unicorn", "serial": "11030163" },
+      "N01SOL01513": { "name": "Overlock", "line": "64B Line", "model": "Juki", "serial": "8MOQJ00190" },
+
+      "N01SCS00283": { "name": "Coverstitch", "line": "65A Line", "model": "Yamato", "serial": "AD 21383" },
+      "N01SCS00400": { "name": "Coverstitch", "line": "65A Line", "model": "Yamato", "serial": "AD 22774" },
+      "N01SCS01007": { "name": "Coverstitch", "line": "65A Line", "model": "Pegasus", "serial": "0511302" },
+      "N01SCS01115": { "name": "Coverstitch", "line": "65A Line", "model": "Yamato", "serial": "AD32010" },
+      "N01SL100127": { "name": "Lockstitch", "line": "65A Line", "model": "Sunstar", "serial": "34047901" },
+      "N01SL100276": { "name": "Lockstitch", "line": "65A Line", "model": "Sunstar", "serial": "11F18048" },
+      "N01SL101072": { "name": "Lockstitch", "line": "65A Line", "model": "Juki", "serial": "8DOQH04451" },
+      "N01SL101082": { "name": "Lockstitch", "line": "65A Line", "model": "Juki", "serial": "8DOQH04467" },
+      "N01SL101143": { "name": "Lockstitch", "line": "65A Line", "model": "Juki", "serial": "8DOQH04557" },
+      "N01SL101220": { "name": "Lockstitch", "line": "65A Line", "model": "Juki", "serial": "8DOQH06329" },
+      "N01SOL00815": { "name": "Overlock", "line": "65A Line", "model": "Kingtex", "serial": "8164873" },
+      "N01SOL00925": { "name": "Overlock", "line": "65A Line", "model": "Kingtex", "serial": "8186827" },
+      "N01SOL01341": { "name": "Overlock", "line": "65A Line", "model": "HUATANG", "serial": "70001448" },
+      "N01SOL01402": { "name": "Overlock", "line": "65A Line", "model": "HUATANG", "serial": "70001662" },
+      "N01SOL01567": { "name": "Overlock", "line": "65A Line", "model": "Juki", "serial": "8MOQJ00244" },
+      "N01SOL01745": { "name": "Overlock", "line": "65A Line", "model": "Juki", "serial": "8MOQJ04242" },
+
+      "N01SCS00195": { "name": "Coverstitch", "line": "65B Line", "model": "Sunstar", "serial": "11H05901" },
+      "N01SCS00256": { "name": "Coverstitch", "line": "65B Line", "model": "Yamato", "serial": "AD 21284" },
+      "N01SCS00986": { "name": "Coverstitch", "line": "65B Line", "model": "Pegasus", "serial": "0511243" },
+      "N01SCS01185": { "name": "Coverstitch", "line": "65B Line", "model": "Yamato", "serial": "AD32136" },
+      "N01SCS01209": { "name": "Coverstitch", "line": "65B Line", "model": "Yamato", "serial": "AD34850" },
+      "N01SL101056": { "name": "Lockstitch", "line": "65B Line", "model": "Juki", "serial": "8DOQH04428" },
+      "N01SL101130": { "name": "Lockstitch", "line": "65B Line", "model": "Juki", "serial": "8DOQH04538" },
+      "N01SL101147": { "name": "Lockstitch", "line": "65B Line", "model": "Juki", "serial": "8DOQH04562" },
+      "N01SOL00302": { "name": "Overlock", "line": "65B Line", "model": "Kingtex", "serial": "8112906" },
+      "N01SOL00328": { "name": "Overlock", "line": "65B Line", "model": "Kingtex", "serial": "8112935" },
+      "N01SOL00850": { "name": "Overlock", "line": "65B Line", "model": "Kingtex", "serial": "8175844" },
+      "N01SOL01627": { "name": "Overlock", "line": "65B Line", "model": "Juki", "serial": "8MOQJ00304" },
+      "N01SOL01821": { "name": "Overlock", "line": "65B Line", "model": "Juki", "serial": "8MOQJ04318" },
+      "N01SOL01827": { "name": "Overlock", "line": "65B Line", "model": "Juki", "serial": "8MOQJ04324" },
+
+      "N01SL100168": { "name": "Lockstitch", "line": "66A Line", "model": "Sunstar", "serial": "11E04046" },
+      "N01SL100674": { "name": "Lockstitch", "line": "66A Line", "model": "JACK", "serial": "18011069994" },
+      "N01SL101087": { "name": "Lockstitch", "line": "66A Line", "model": "Juki", "serial": "8DOQH04476" },
+      "N01SL101166": { "name": "Lockstitch", "line": "66A Line", "model": "Juki", "serial": "8DOQH04586" },
+      "N01SL101205": { "name": "Lockstitch", "line": "66A Line", "model": "Juki", "serial": "8DOQH06280" },
+      "N01SOL00275": { "name": "Overlock", "line": "66A Line", "model": "Kingtex", "serial": "8112399" },
+      "N01SOL00345": { "name": "Overlock", "line": "66A Line", "model": "Kingtex", "serial": "8112955" },
+      "N01SOL01259": { "name": "Overlock", "line": "66A Line", "model": "Unicorn", "serial": "80130016" },
+      "N01SOL01316": { "name": "Overlock", "line": "66A Line", "model": "Unicorn", "serial": "86260418" },
+      "N01SOL01445": { "name": "Overlock", "line": "66A Line", "model": "Juki", "serial": "8MOQJ00122" },
+
+      "N01SCS00242": { "name": "Coverstitch", "line": "66B Line", "model": "Yamato", "serial": "AD 21198" },
+      "N01SCS00306": { "name": "Coverstitch", "line": "66B Line", "model": "Yamato", "serial": "AD 21437" },
+      "N01SCS00310": { "name": "Coverstitch", "line": "66B Line", "model": "Yamato", "serial": "AD 21441" },
+      "N01SCS00405": { "name": "Coverstitch", "line": "66B Line", "model": "Yamato", "serial": "AD 22784" },
+      "N01SCS01295": { "name": "Coverstitch", "line": "66B Line", "model": "Juki", "serial": "8M4QJ00787" },
+      "N01SL101187": { "name": "Lockstitch", "line": "66B Line", "model": "Juki", "serial": "8DOQH06245" },
+      "N01SOL00185": { "name": "Overlock", "line": "66B Line", "model": "Kingtex", "serial": "8112304" },
+      "N01SOL00193": { "name": "Overlock", "line": "66B Line", "model": "Kingtex", "serial": "8112312" },
+      "N01SOL00248": { "name": "Overlock", "line": "66B Line", "model": "Kingtex", "serial": "8112371" },
+      "N01SOL00915": { "name": "Overlock", "line": "66B Line", "model": "Kingtex", "serial": "8186817" },
+      "N01SOL01778": { "name": "Overlock", "line": "66B Line", "model": "Juki", "serial": "8MOQJ04275" },
+      "N01SOL01838": { "name": "Overlock", "line": "66B Line", "model": "Juki", "serial": "8MOQJ04335" },
+
+      "N01SBT00067": { "name": "Bartack", "line": "67A Line", "model": "JACK", "serial": "160396007P" },
+      "N01SCS00305": { "name": "Coverstitch", "line": "67A Line", "model": "Yamato", "serial": "AD 21436" },
+      "N01SCS00446": { "name": "Coverstitch", "line": "67A Line", "model": "Yamato", "serial": "AD 22868" },
+      "N01SCS01010": { "name": "Coverstitch", "line": "67A Line", "model": "Pegasus", "serial": "0515385" },
+      "N01SCS01089": { "name": "Coverstitch", "line": "67A Line", "model": "Yamato", "serial": "AD31959" },
+      "N01SCS01161": { "name": "Lockstitch", "line": "67A Line", "model": "Yamato", "serial": "AD32091" },
+      "N01SL101090": { "name": "Lockstitch", "line": "67A Line", "model": "Juki", "serial": "8DOQH04480" },
+      "N01SL101151": { "name": "Overlock", "line": "67A Line", "model": "Juki", "serial": "8DOQH04566" },
+      "N01SOL00298": { "name": "Overlock", "line": "67A Line", "model": "Kingtex", "serial": "8112902" },
+      "N01SOL00906": { "name": "Overlock", "line": "67A Line", "model": "Kingtex", "serial": "8186808" },
+      "N01SOL01409": { "name": "Overlock", "line": "67A Line", "model": "HUATANG", "serial": "70001669" },
+      "N01SOL01609": { "name": "Overlock", "line": "67A Line", "model": "Juki", "serial": "8MOQJ00286" },
+
+      "N01SCS00353": { "name": "Coverstitch", "line": "67B Line", "model": "Yamato", "serial": "AD 21518" },
+      "N01SCS00401": { "name": "Coverstitch", "line": "67B Line", "model": "Yamato", "serial": "AD 22775" },
+      "N01SCS00980": { "name": "Coverstitch", "line": "67B Line", "model": "Pegasus", "serial": "0511226" },
+      "N01SCS01184": { "name": "Coverstitch", "line": "67B Line", "model": "Yamato", "serial": "AD32135" },
+      "N01SL100195": { "name": "Lockstitch", "line": "67B Line", "model": "Sunstar", "serial": "11E15275" },
+      "N01SL100300": { "name": "Lockstitch", "line": "67B Line", "model": "Sunstar", "serial": "11F18339" },
+      "N01SOL00189": { "name": "Overlock", "line": "67B Line", "model": "Kingtex", "serial": "8112308" },
+      "N01SOL00305": { "name": "Overlock", "line": "67B Line", "model": "Kingtex", "serial": "8112909" },
+
+      "N01SBT00086": { "name": "Bartack", "line": "68A Line", "model": "JACK", "serial": "18053004798" },
+      "N01SCS00414": { "name": "Coverstitch", "line": "68A Line", "model": "Yamato", "serial": "AD 22804" },
+      "N01SCS00996": { "name": "Coverstitch", "line": "68A Line", "model": "Pegasus", "serial": "0511272" },
+      "N01SCS01138": { "name": "Coverstitch", "line": "68A Line", "model": "Yamato", "serial": "AD32051" },
+      "N01SCS01152": { "name": "Coverstitch", "line": "68A Line", "model": "Yamato", "serial": "AD32074" },
+      "N01SL100878": { "name": "Lockstitch", "line": "68A Line", "model": "Unicorn", "serial": "S/S 036" },
+      "N01SOL00614": { "name": "Overlock", "line": "68A Line", "model": "Juki", "serial": "RM0MC03335" },
+      "N01SOL00805": { "name": "Overlock", "line": "68A Line", "model": "Kingtex", "serial": "8164863" },
+      "N01SOL00904": { "name": "Overlock", "line": "68A Line", "model": "Kingtex", "serial": "8186806" },
+      "N01SOL00907": { "name": "Overlock", "line": "68A Line", "model": "Kingtex", "serial": "8186809" },
+      "N01SOL00919": { "name": "Overlock", "line": "68A Line", "model": "Kingtex", "serial": "8186821" },
+      "N01SOL01413": { "name": "Overlock", "line": "68A Line", "model": "HUATANG", "serial": "70001673" },
+      "N01SOL01418": { "name": "Overlock", "line": "68A Line", "model": "HUATANG", "serial": "70001678" },
+
+      "N01SCS00435": { "name": "Coverstitch", "line": "68B Line", "model": "Yamato", "serial": "AD 22852" },
+      "N01SCS00480": { "name": "Coverstitch", "line": "68B Line", "model": "Yamato", "serial": "AD 28194" },
+      "N01SCS00494": { "name": "Coverstitch", "line": "68B Line", "model": "Yamato", "serial": "AD 28212" },
+      "N01SCS00512": { "name": "Coverstitch", "line": "68B Line", "model": "Yamato", "serial": "AD 28231" },
+      "N01SCS01017": { "name": "Coverstitch", "line": "68B Line", "model": "Pegasus", "serial": "0515446" },
+      "N01SCS01325": { "name": "Coverstitch", "line": "68B Line", "model": "Juki", "serial": "8M4QK00561" },
+      "N01SL100496": { "name": "Lockstitch", "line": "68B Line", "model": "Juki", "serial": "8D0KC00272" },
+      "N01SL100712": { "name": "Lockstitch", "line": "68B Line", "model": "JACK", "serial": "18061048716" },
+      "N01SOL00151": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8112267" },
+      "N01SOL00344": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8112954" },
+      "N01SOL00384": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8112998" },
+      "N01SOL00731": { "name": "Overlock", "line": "68B Line", "model": "Juki", "serial": "RM0MC03706" },
+      "N01SOL00780": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8105318" },
+      "N01SOL00810": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8164868" },
+      "N01SOL00895": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8186597" },
+      "N01SOL00910": { "name": "Overlock", "line": "68B Line", "model": "Kingtex", "serial": "8186812" },
+      "N01SOL01154": { "name": "Overlock", "line": "68B Line", "model": "Unicorn", "serial": "11030054" },
+      "N01SOL01380": { "name": "Overlock", "line": "68B Line", "model": "HUATANG", "serial": "70001640" },
+      "N01SOL01406": { "name": "Overlock", "line": "68B Line", "model": "HUATANG", "serial": "70001666" },
+      "N01SOL01421": { "name": "Overlock", "line": "68B Line", "model": "HUATANG", "serial": "70001681" },
+
+      "N01SCM00078": { "name": "Coverstitch Multi-Needle", "line": "69A Line", "model": "KANSAI SPECIAL", "serial": "KS1601140" },
+      "N01SCS00264": { "name": "Coverstitch", "line": "69A Line", "model": "Yamato", "serial": "AD 21416" },
+      "N01SCS00366": { "name": "Coverstitch", "line": "69A Line", "model": "Yamato", "serial": "AD 21581" },
+      "N01SCS00518": { "name": "Coverstitch", "line": "69A Line", "model": "Yamato", "serial": "AD 28241" },
+      "N01SCS00599": { "name": "Coverstitch", "line": "69A Line", "model": "JACK", "serial": "150871294" },
+      "N01SCS00725": { "name": "Coverstitch", "line": "69A Line", "model": "Kingtex", "serial": "2113211" },
+      "N01SCS00988": { "name": "Coverstitch", "line": "69A Line", "model": "Pegasus", "serial": "0511246" },
+      "N01SCS01096": { "name": "Coverstitch", "line": "69A Line", "model": "Yamato", "serial": "AD31969" },
+      "N01SCS01206": { "name": "Coverstitch", "line": "69A Line", "model": "Yamato", "serial": "AD34846" },
+      "N01SL100457": { "name": "Lockstitch", "line": "69A Line", "model": "Juki", "serial": "8D0JM02649" },
+      "N01SL100772": { "name": "Lockstitch", "line": "69A Line", "model": "JACK", "serial": "18061074545" },
+      "N01SOL00246": { "name": "Overlock", "line": "69A Line", "model": "Kingtex", "serial": "8112369" },
+      "N01SOL00325": { "name": "Overlock", "line": "69A Line", "model": "Kingtex", "serial": "8112932" },
+      "N01SOL01291": { "name": "Overlock", "line": "69A Line", "model": "Unicorn", "serial": "80130200" },
+      "N01SOL01313": { "name": "Overlock", "line": "69A Line", "model": "Unicorn", "serial": "86060082" },
+      "N01SOL01348": { "name": "Overlock", "line": "69A Line", "model": "HUATANG", "serial": "70001455" },
+      "N01SOL01423": { "name": "Overlock", "line": "69A Line", "model": "HUATANG", "serial": "70001683" },
+
+      "N01SCS00384": { "name": "Coverstitch", "line": "69B Line", "model": "Yamato", "serial": "AD 22749" },
+      "N01SCS00543": { "name": "Coverstitch", "line": "69B Line", "model": "Yamato", "serial": "AD 28295" },
+      "N01SCS00612": { "name": "Coverstitch", "line": "69B Line", "model": "JACK", "serial": "150873029" },
+      "N01SCS01019": { "name": "Coverstitch", "line": "69B Line", "model": "Pegasus", "serial": "S/S 041" },
+      "N01SCS01198": { "name": "Coverstitch", "line": "69B Line", "model": "Yamato", "serial": "AD32165" },
+      "N01SCS01227": { "name": "Coverstitch", "line": "69B Line", "model": "Yamato", "serial": "AD34889" },
+      "N01SL100603": { "name": "Lockstitch", "line": "69B Line", "model": "Juki", "serial": "8D0KD05667" },
+      "N01SL100749": { "name": "Lockstitch", "line": "69B Line", "model": "JACK", "serial": "18061073838" },
+      "N01SL101016": { "name": "Lockstitch", "line": "69B Line", "model": "Unicorn", "serial": "07064194" },
+      "N01SL101172": { "name": "Lockstitch", "line": "69B Line", "model": "Juki", "serial": "8DOQH06214" },
+      "N01SOL00113": { "name": "Overlock", "line": "69B Line", "model": "Kingtex", "serial": "8073267" },
+      "N01SOL00528": { "name": "Overlock", "line": "69B Line", "model": "Kingtex", "serial": "8162404" },
+      "N01SOL00623": { "name": "Overlock", "line": "69B Line", "model": "Juki", "serial": "RM0MC03412" },
+      "N01SOL00665": { "name": "Overlock", "line": "69B Line", "model": "Juki", "serial": "RM0MC03490" },
+      "N01SOL00892": { "name": "Overlock", "line": "69B Line", "model": "Kingtex", "serial": "8186594" },
+      "N01SOL00903": { "name": "Overlock", "line": "69B Line", "model": "Kingtex", "serial": "8186805" },
+      "N01SOL01280": { "name": "Overlock", "line": "69B Line", "model": "Unicorn", "serial": "80130124" },
+      "N01SOL01307": { "name": "Overlock", "line": "69B Line", "model": "Unicorn", "serial": "86060047" },
+      "N01SOL01381": { "name": "Overlock", "line": "69B Line", "model": "HUATANG", "serial": "70001641" },
+      "N01SOL01403": { "name": "Overlock", "line": "69B Line", "model": "HUATANG", "serial": "70001663" },
+      
+      "N01SCS00317": { "name": "Coverstitch", "line": "70A Line", "model": "Yamato", "serial": "AD 21450" },
+      "N01SCS00403": { "name": "Coverstitch", "line": "70A Line", "model": "Yamato", "serial": "AD 22782" },
+      "N01SCS00457": { "name": "Coverstitch", "line": "70A Line", "model": "Yamato", "serial": "AD 28154" },
+      "N01SCS00474": { "name": "Coverstitch", "line": "70A Line", "model": "Yamato", "serial": "AD 28187" },
+      "N01SCS00541": { "name": "Coverstitch", "line": "70A Line", "model": "Yamato", "serial": "AD 28289" },
+      "N01SCS01008": { "name": "Coverstitch", "line": "70A Line", "model": "Pegasus", "serial": "0511303" },
+      "N01SL100963": { "name": "Lockstitch", "line": "70A Line", "model": "Unicorn", "serial": "05073030" },
+      "N01SOL00203": { "name": "Overlock", "line": "70A Line", "model": "Kingtex", "serial": "8112323" },
+      "N01SOL00274": { "name": "Overlock", "line": "70A Line", "model": "Kingtex", "serial": "8112398" },
+      "N01SOL00285": { "name": "Overlock", "line": "70A Line", "model": "Kingtex", "serial": "8112884" },
+      "N01SOL00388": { "name": "Overlock", "line": "70A Line", "model": "Kingtex", "serial": "8113002" },
+      "N01SOL00691": { "name": "Overlock", "line": "70A Line", "model": "Juki", "serial": "RM0MC03578" },
+      "N01SOL00801": { "name": "Overlock", "line": "70A Line", "model": "Kingtex", "serial": "8105405" },
+
+      "N01SCS01034": { "name": "Coverstitch", "line": "70B Line", "model": "Sunstar", "serial": "10J04302" },
+      "N01SL100245": { "name": "Lockstitch", "line": "70B Line", "model": "Sunstar", "serial": "11F06972" },
+      "N01SOL00240": { "name": "Overlock", "line": "70B Line", "model": "Kingtex", "serial": "8112362" },
+      "N01SOL00455": { "name": "Overlock", "line": "70B Line", "model": "Kingtex", "serial": "8161831" },
+      "N01SOL00524": { "name": "Overlock", "line": "70B Line", "model": "Kingtex", "serial": "8161900" },
+      "N01SOL00822": { "name": "Overlock", "line": "70B Line", "model": "Kingtex", "serial": "8164880" },
+      "N01SOL01467": { "name": "Overlock", "line": "70B Line", "model": "Juki", "serial": "8MOQJ00144" },
+
+    };
+
+    function renderLayout() {
+  const layout = document.getElementById("layout");
+  layout.innerHTML = "";
+
+  const lineMap = {};
+  for (const [barcode, info] of Object.entries(machineInfo)) {
+    if (!lineMap[info.line]) lineMap[info.line] = [];
+    lineMap[info.line].push({ barcode, ...info });
+  }
+
+  const sortedLines = Object.keys(lineMap).sort();
+
+  for (const lineName of sortedLines) {
+    const section = document.createElement("div");
+    section.className = "line-section";
+    section.setAttribute("data-line", lineName);
+
+    const machineCount = lineMap[lineName].length;
+
+    const title = document.createElement("h3");
+    title.textContent = `[${lineName}] (총 ${machineCount}대)`;
+    section.appendChild(title);
+
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <tr><th>구분</th><th>모델</th><th>바코드</th><th>시리얼</th></tr>
+    `;
+
+    for (const machine of lineMap[lineName]) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${machine.name}</td>
+        <td>${machine.model}</td>
+        <td>${machine.barcode}</td>
+        <td>${machine.serial}</td>
+      `;
+      table.appendChild(row);
+    }
+
+    section.appendChild(table);
+    layout.appendChild(section);
+  }
+}
+
+    function searchByBarcode() {
+      const keyword = document.getElementById("barcodeInput").value.trim();
+      const layout = document.getElementById("layout");
+
+      if (!keyword) {
+        alert("바코드를 입력하세요.");
+        return;
+      }
+
+      const allSections = layout.querySelectorAll(".line-section");
+      allSections.forEach(sec => sec.classList.remove("highlight"));
+
+      const foundEntry = Object.entries(machineInfo).find(([barcode, info]) => barcode === keyword);
+      if (!foundEntry) {
+        alert("해당 바코드를 찾을 수 없습니다.");
+        return;
+      }
+
+      const targetLine = foundEntry[1].line;
+      const targetSection = layout.querySelector(`.line-section[data-line="${targetLine}"]`);
+      if (targetSection) {
+        targetSection.classList.add("highlight");
+        targetSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function addMachine() {
+      const barcode = document.getElementById("newBarcode").value.trim();
+      const line = document.getElementById("newLine").value.trim();
+      const model = document.getElementById("newModel").value.trim();
+
+      if (!barcode || !line || !model) {
+        alert("모든 항목을 입력해주세요.");
+        return;
+      }
+
+      machineInfo[barcode] = { name: "장비", line, model };
+      renderLayout();
+    }
+
+    function removeMachine() {
+      const barcode = document.getElementById("newBarcode").value.trim();
+
+      if (!barcode) {
+        alert("삭제할 바코드를 입력하세요.");
+        return;
+      }
+
+      if (machineInfo[barcode]) {
+        delete machineInfo[barcode];
+        renderLayout();
+      } else {
+        alert("해당 바코드를 찾을 수 없습니다.");
+      }
+    }
+
+    renderLayout();
+  </script>
+</body>
+</html>
