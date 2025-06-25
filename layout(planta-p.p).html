@@ -1,59 +1,85 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>기계 배치도 (라인 기반)</title>
+  <title>기계 배치도</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .grid {
+    body { font-family: Arial, sans-serif; }
+
+    .layout-container {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
-      margin-top: 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding: 20px;
     }
-    .cell {
-      border: 1px solid #ccc;
+
+    .line-section {
+      border: 2px solid #444;
+      border-radius: 8px;
       padding: 10px;
-      min-height: 120px;
-      background-color: #f9f9f9;
-      position: relative;
+      background-color: #f4f4f4;
     }
-    .highlight {
-      background-color: #4caf50;
-      color: white;
+
+    .line-section.highlight {
+      background-color: yellow !important;
     }
-    .label {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-    }
-    .machine {
-      font-size: 14px;
-      margin-top: 4px;
-    }
-    input {
-      padding: 5px;
+
+    .line-section h3 {
+      margin-top: 0;
       font-size: 16px;
-      margin-right: 10px;
+      text-align: center;
     }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #aaa;
+      padding: 4px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ddd;
+    }
+
+    .search-area, .form-area {
+      text-align: center;
+      margin: 10px;
+    }
+
+    input, select {
+      padding: 6px;
+      font-size: 14px;
+      margin-right: 5px;
+    }
+
     button {
       padding: 6px 12px;
-      font-size: 16px;
+      font-size: 14px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<h2>바코드 기반 기계 배치도</h2>
-<input type="text" id="barcode" placeholder="바코드 입력 (예: N01SBH00013)">
-<button onclick="highlightMachine()">검색</button>
+  <h2>라인별 기계 배치도</h2>
 
-<div class="grid" id="layout"></div>
+  <div class="search-area">
+    <input type="text" id="barcodeInput" placeholder="바코드를 입력하세요" />
+    <button onclick="searchByBarcode()">검색</button>
+  </div>
 
-<script>
-  // Excel에서 자동 추출한 기계 정보
-  const machineInfo = {
-  "N01SL100479": { "name": "Lockstitch", "line": "01A Line", "model": "Juki", "serial": "8D0JM02734" },
+  
+  <div id="layout" class="layout-container"></div>
+
+  <script>
+    const machineInfo = {
+      "N01SL100479": { "name": "Lockstitch", "line": "01A Line", "model": "Juki", "serial": "8D0JM02734" },
   "N01SL100500": { "name": "Lockstitch", "line": "01A Line", "model": "Juki", "serial": "8D0KC00300" },
   "N01SL100556": { "name": "Lockstitch", "line": "01A Line", "model": "Juki", "serial": "8D0KC00471" },
   "N01SL100579": { "name": "Lockstitch", "line": "01A Line", "model": "Juki", "serial": "8D0KD05593" },
@@ -1131,61 +1157,109 @@
   "N01SL101193": { "name": "Lockstitch", "line": "30B Line", "model": "Juki", "serial": "8DOQH06254" },
   "N01SL101210": { "name": "Lockstitch", "line": "30B Line", "model": "Juki", "serial": "8DOQH06290" },
   "N01SZG00015": { "name": "ZigZag", "line": "30B Line", "model": "Sunstar", "serial": "50200804" }
-};
+    };
 
- // 라인별 기계 목록 초기화
-const lineMachineMap = {};
-Object.entries(machineInfo).forEach(([code, { line }]) => {
-  if (!lineMachineMap[line]) lineMachineMap[line] = [];
-  lineMachineMap[line].push(code);
-});
+    function renderLayout() {
+  const layout = document.getElementById("layout");
+  layout.innerHTML = "";
 
-const layout = document.getElementById("layout");
-
-// 라인 셀 생성 + Total 개수 표시
-Object.keys(lineMachineMap).sort().forEach(line => {
-  const count = lineMachineMap[line].length;
-  const div = document.createElement("div");
-  div.className = "cell";
-  div.id = line;
-  div.innerHTML = `<span class="label">${line} (Total: ${count})</span><div class="machine-list"></div>`;
-  layout.appendChild(div);
-});
-
-// 기계 목록 출력 + 앞에 번호 붙이기
-Object.entries(lineMachineMap).forEach(([line, codes]) => {
-  const container = document.querySelector(`#${CSS.escape(line)} .machine-list`);
-  codes.forEach((code, idx) => {
-    const { name, model, serial } = machineInfo[code];
-    const item = document.createElement("div");
-    item.className = "machine";
-    item.innerText = `${idx + 1}. ${name} ${model ?? ""} ${serial ?? ""} (${code})`;
-    container.appendChild(item);
-  });
-});
-
-
-  // 바코드 입력 시 강조 기능
-  function highlightMachine() {
-    const barcode = document.getElementById("barcode").value.trim();
-
-    // 모든 셀 초기화
-    document.querySelectorAll(".cell").forEach(cell => {
-      cell.classList.remove("highlight");
-    });
-
-    if (machineInfo[barcode]) {
-      const { line } = machineInfo[barcode];
-      const target = document.getElementById(line);
-      if (target) {
-        target.classList.add("highlight");
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    } else {
-      alert("해당 바코드를 찾을 수 없습니다.");
-    }
+  const lineMap = {};
+  for (const [barcode, info] of Object.entries(machineInfo)) {
+    if (!lineMap[info.line]) lineMap[info.line] = [];
+    lineMap[info.line].push({ barcode, ...info });
   }
-</script>
 
+  const sortedLines = Object.keys(lineMap).sort();
+
+  for (const lineName of sortedLines) {
+    const section = document.createElement("div");
+    section.className = "line-section";
+    section.setAttribute("data-line", lineName);
+
+    const machineCount = lineMap[lineName].length;
+
+    const title = document.createElement("h3");
+    title.textContent = `[${lineName}] (총 ${machineCount}대)`;
+    section.appendChild(title);
+
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <tr><th>구분</th><th>모델</th><th>바코드</th><th>시리얼</th></tr>
+    `;
+
+    for (const machine of lineMap[lineName]) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${machine.name}</td>
+        <td>${machine.model}</td>
+        <td>${machine.barcode}</td>
+        <td>${machine.serial}</td>
+      `;
+      table.appendChild(row);
+    }
+
+    section.appendChild(table);
+    layout.appendChild(section);
+  }
+}
+
+    function searchByBarcode() {
+      const keyword = document.getElementById("barcodeInput").value.trim();
+      const layout = document.getElementById("layout");
+
+      if (!keyword) {
+        alert("바코드를 입력하세요.");
+        return;
+      }
+
+      const allSections = layout.querySelectorAll(".line-section");
+      allSections.forEach(sec => sec.classList.remove("highlight"));
+
+      const foundEntry = Object.entries(machineInfo).find(([barcode, info]) => barcode === keyword);
+      if (!foundEntry) {
+        alert("해당 바코드를 찾을 수 없습니다.");
+        return;
+      }
+
+      const targetLine = foundEntry[1].line;
+      const targetSection = layout.querySelector(`.line-section[data-line="${targetLine}"]`);
+      if (targetSection) {
+        targetSection.classList.add("highlight");
+        targetSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function addMachine() {
+      const barcode = document.getElementById("newBarcode").value.trim();
+      const line = document.getElementById("newLine").value.trim();
+      const model = document.getElementById("newModel").value.trim();
+
+      if (!barcode || !line || !model) {
+        alert("모든 항목을 입력해주세요.");
+        return;
+      }
+
+      machineInfo[barcode] = { name: "장비", line, model };
+      renderLayout();
+    }
+
+    function removeMachine() {
+      const barcode = document.getElementById("newBarcode").value.trim();
+
+      if (!barcode) {
+        alert("삭제할 바코드를 입력하세요.");
+        return;
+      }
+
+      if (machineInfo[barcode]) {
+        delete machineInfo[barcode];
+        renderLayout();
+      } else {
+        alert("해당 바코드를 찾을 수 없습니다.");
+      }
+    }
+
+    renderLayout();
+  </script>
 </body>
 </html>
